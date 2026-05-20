@@ -79,6 +79,8 @@ import { SettingsSidebar } from './SettingsSidebar'
 import { SettingsSection } from './SettingsSection'
 import { matchesSettingsSearch, type SettingsSearchEntry } from './settings-search'
 import { checkRuntimeHooks } from '@/runtime/runtime-hooks-client'
+import { getShortcutPlatform } from '@/lib/shortcut-platform'
+import { keybindingMatchesAction } from '../../../../shared/keybindings'
 import {
   deriveNeededRepoIds,
   deriveNeededSectionIds,
@@ -230,9 +232,11 @@ function isWebClientLocation(): boolean {
 
 function Settings(): React.JSX.Element {
   const settings = useAppStore((s) => s.settings)
+  const keybindings = useAppStore((s) => s.keybindings)
   const updateSettings = useAppStore((s) => s.updateSettings)
   const switchRuntimeEnvironment = useAppStore((s) => s.switchRuntimeEnvironment)
   const fetchSettings = useAppStore((s) => s.fetchSettings)
+  const fetchKeybindings = useAppStore((s) => s.fetchKeybindings)
   const closeSettingsPage = useAppStore((s) => s.closeSettingsPage)
   const repos = useAppStore((s) => s.repos)
   const updateRepo = useAppStore((s) => s.updateRepo)
@@ -319,7 +323,8 @@ function Settings(): React.JSX.Element {
 
   useEffect(() => {
     fetchSettings()
-  }, [fetchSettings])
+    fetchKeybindings()
+  }, [fetchKeybindings, fetchSettings])
 
   const runtimeTargetIdentity = getRuntimeTargetIdentity(settings)
 
@@ -379,13 +384,10 @@ function Settings(): React.JSX.Element {
 
   useEffect(() => {
     const handleFindShortcut = (event: KeyboardEvent): void => {
-      if (event.defaultPrevented || event.altKey || event.shiftKey) {
+      if (event.defaultPrevented) {
         return
       }
-      // Why: Cmd on Mac, Ctrl elsewhere — matches the rest of the app's
-      // mod-key convention (see App.tsx) and aligns with platform Find norms.
-      const mod = isMac ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey
-      if (!mod || event.key.toLowerCase() !== 'f') {
+      if (!keybindingMatchesAction('settings.search', event, getShortcutPlatform(), keybindings)) {
         return
       }
       const input = searchInputRef.current
@@ -399,7 +401,7 @@ function Settings(): React.JSX.Element {
 
     document.addEventListener('keydown', handleFindShortcut)
     return () => document.removeEventListener('keydown', handleFindShortcut)
-  }, [isMac])
+  }, [keybindings])
 
   useEffect(
     () => () => {

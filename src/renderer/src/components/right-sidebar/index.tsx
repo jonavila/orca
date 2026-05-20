@@ -28,6 +28,7 @@ import {
   TopActivityOverflowMenu,
   type ActivityBarItem
 } from './activity-bar-buttons'
+import { useShortcutLabel } from '@/hooks/useShortcutLabel'
 
 const MIN_WIDTH = 220
 // Why: long file names (e.g. construction drawing sheets, multi-part document
@@ -65,47 +66,13 @@ function getActiveChecksStatus(state: ReturnType<typeof useAppStore.getState>): 
   return state.prCache[prCacheKey]?.data?.checksStatus ?? null
 }
 
-const isMac = typeof navigator !== 'undefined' && navigator.userAgent.includes('Mac')
-const mod = isMac ? '\u2318' : 'Ctrl+'
-
-const ACTIVITY_ITEMS: ActivityBarItem[] = [
-  {
-    id: 'explorer',
-    icon: Files,
-    title: 'Explorer',
-    shortcut: `${isMac ? '\u21E7' : 'Shift+'}${mod}E`
-  },
-  {
-    id: 'search',
-    icon: Search,
-    title: 'Search',
-    shortcut: `${isMac ? '\u21E7' : 'Shift+'}${mod}F`
-  },
-  {
-    id: 'source-control',
-    icon: GitBranch,
-    title: 'Source Control',
-    shortcut: `${isMac ? '\u21E7' : 'Shift+'}${mod}G`,
-    gitOnly: true
-  },
-  {
-    id: 'checks',
-    icon: ListChecks,
-    title: 'Checks',
-    shortcut: `${isMac ? '\u21E7' : 'Shift+'}${mod}K`,
-    gitOnly: true
-  },
-  {
-    id: 'ports',
-    icon: Cable,
-    title: 'Ports',
-    // Why: Ctrl+Shift+I is the DevTools accelerator on Windows/Linux, so this
-    // shortcut is macOS-only. On other platforms the tooltip omits it.
-    shortcut: isMac ? `\u21E7${mod}I` : ''
-  }
-]
-
 function RightSidebarInner(): React.JSX.Element {
+  const rightSidebarShortcut = useShortcutLabel('sidebar.right.toggle')
+  const explorerShortcut = useShortcutLabel('sidebar.explorer.toggle')
+  const searchShortcut = useShortcutLabel('sidebar.search.toggle')
+  const sourceControlShortcut = useShortcutLabel('sidebar.sourceControl.toggle')
+  const checksShortcut = useShortcutLabel('sidebar.checks.toggle')
+  const portsShortcut = useShortcutLabel('sidebar.ports.toggle')
   const activeWorktree = useActiveWorktree()
   const rightSidebarOpen = useAppStore((s) => s.rightSidebarOpen)
   const rightSidebarWidth = useAppStore((s) => s.rightSidebarWidth)
@@ -122,15 +89,53 @@ function RightSidebarInner(): React.JSX.Element {
   const activeRepo = useRepoById(activeWorktree?.repoId ?? null)
   const isFolder = activeRepo ? isFolderRepo(activeRepo) : false
 
+  const activityItems = useMemo<ActivityBarItem[]>(
+    () => [
+      {
+        id: 'explorer',
+        icon: Files,
+        title: 'Explorer',
+        shortcut: explorerShortcut === 'Unassigned' ? '' : explorerShortcut
+      },
+      {
+        id: 'search',
+        icon: Search,
+        title: 'Search',
+        shortcut: searchShortcut === 'Unassigned' ? '' : searchShortcut
+      },
+      {
+        id: 'source-control',
+        icon: GitBranch,
+        title: 'Source Control',
+        shortcut: sourceControlShortcut === 'Unassigned' ? '' : sourceControlShortcut,
+        gitOnly: true
+      },
+      {
+        id: 'checks',
+        icon: ListChecks,
+        title: 'Checks',
+        shortcut: checksShortcut === 'Unassigned' ? '' : checksShortcut,
+        gitOnly: true
+      },
+      {
+        id: 'ports',
+        icon: Cable,
+        title: 'Ports',
+        shortcut: portsShortcut === 'Unassigned' ? '' : portsShortcut
+      }
+    ],
+    [checksShortcut, explorerShortcut, portsShortcut, searchShortcut, sourceControlShortcut]
+  )
+
   const visibleItems = useMemo(
     () =>
-      ACTIVITY_ITEMS.filter((item) => {
+      activityItems.filter((item) => {
         if (item.gitOnly && isFolder) {
           return false
         }
         return true
       }),
-    [isFolder]
+    [activityItems, isFolder]
   )
 
   // If the active tab is hidden (e.g. switched from a git repo to a folder),
@@ -204,7 +209,7 @@ function RightSidebarInner(): React.JSX.Element {
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" sideOffset={6}>
-        {`Toggle right sidebar (${isMac ? '⌘L' : 'Ctrl+L'})`}
+        {`Toggle right sidebar (${rightSidebarShortcut})`}
       </TooltipContent>
     </Tooltip>
   ) : null

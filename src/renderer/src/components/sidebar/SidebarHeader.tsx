@@ -18,6 +18,7 @@ import {
 import type { WorktreeCardProperty } from '../../../../shared/types'
 import SidebarFilter from './SidebarFilter'
 import WorkspaceKanbanDrawer from './WorkspaceKanbanDrawer'
+import { useShortcutLabel } from '@/hooks/useShortcutLabel'
 
 const GROUP_BY_OPTIONS = [
   { id: 'none', label: 'None' },
@@ -44,10 +45,8 @@ const SORT_OPTIONS = [
   { id: 'repo', label: 'Repo', description: null }
 ] as const
 
-const isMac = navigator.userAgent.includes('Mac')
-const newWorktreeShortcutLabel = isMac ? '⌘N' : 'Ctrl+N'
-
 const SidebarHeader = React.memo(function SidebarHeader() {
+  const newWorktreeShortcutLabel = useShortcutLabel('workspace.create')
   const [workspaceBoardOpen, setWorkspaceBoardOpen] = useState(false)
   const [workspaceBoardMenuOpen, setWorkspaceBoardMenuOpen] = useState(false)
   const openModal = useAppStore((s) => s.openModal)

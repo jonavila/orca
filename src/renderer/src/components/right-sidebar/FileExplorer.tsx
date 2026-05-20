@@ -124,7 +124,6 @@ function FileExplorerInner(): React.JSX.Element {
     refreshDir,
     selectedPath,
     setSelectedPath: setSingleSelectedPath,
-    isMac,
     isWindows
   })
 

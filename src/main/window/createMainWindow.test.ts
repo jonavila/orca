@@ -250,26 +250,36 @@ describe('createMainWindow', () => {
 
     const beforeInputEvent = windowHandlers['before-input-event']
 
+    const primary =
+      process.platform === 'darwin'
+        ? { control: false, meta: true }
+        : { control: true, meta: false }
+
     for (const input of [
-      { type: 'keyDown', control: true, meta: true, alt: false, key: '-' },
-      { type: 'keyDown', control: true, meta: true, alt: false, key: '_' },
-      { type: 'keyDown', control: true, meta: true, alt: false, key: 'Minus' },
-      { type: 'keyDown', control: true, meta: true, alt: false, key: 'Subtract' },
-      { type: 'keyDown', control: true, meta: true, alt: false, key: '', code: 'Minus' },
-      { type: 'keyDown', control: true, meta: true, alt: false, key: '', code: 'NumpadSubtract' }
+      { type: 'keyDown', ...primary, alt: false, key: '-' },
+      { type: 'keyDown', ...primary, alt: false, key: 'Minus' },
+      { type: 'keyDown', ...primary, alt: false, key: 'Subtract' },
+      { type: 'keyDown', ...primary, alt: false, key: '', code: 'Minus' },
+      { type: 'keyDown', ...primary, alt: false, key: '', code: 'NumpadSubtract' }
     ]) {
       const preventDefault = vi.fn()
       beforeInputEvent({ preventDefault } as never, input as never)
       expect(preventDefault).toHaveBeenCalledTimes(1)
     }
 
-    expect(webContents.send).toHaveBeenCalledTimes(6)
+    expect(webContents.send).toHaveBeenCalledTimes(5)
     expect(webContents.send).toHaveBeenNthCalledWith(1, 'terminal:zoom', 'out')
     expect(webContents.send).toHaveBeenNthCalledWith(2, 'terminal:zoom', 'out')
     expect(webContents.send).toHaveBeenNthCalledWith(3, 'terminal:zoom', 'out')
     expect(webContents.send).toHaveBeenNthCalledWith(4, 'terminal:zoom', 'out')
     expect(webContents.send).toHaveBeenNthCalledWith(5, 'terminal:zoom', 'out')
-    expect(webContents.send).toHaveBeenNthCalledWith(6, 'terminal:zoom', 'out')
+
+    const undoPreventDefault = vi.fn()
+    beforeInputEvent(
+      { preventDefault: undoPreventDefault } as never,
+      { type: 'keyDown', ...primary, alt: false, shift: true, key: '_' } as never
+    )
+    expect(undoPreventDefault).not.toHaveBeenCalled()
   })
 
   it('routes Electron zoom command events to terminal zoom', () => {
